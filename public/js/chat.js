@@ -3,31 +3,56 @@ const socket = io()
 // Elements
 const $messageForm = document.querySelector('#message-form')
 const $send = document.querySelector('#messageinput')
-const $location = document.querySelector('#location')
+const $location = document.querySelector('#send-location')
 const $messages = document.querySelector('#messages')
 
 // Templates
 const messageTemplate = document.querySelector('#message-template').innerHTML
 const locationTemplate = document.querySelector('#location-template').innerHTML
+const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
-socket.on("message", (message) => {
+//options
+const {username, room} = Qs.parse(location.search, {ignoreQueryPrefix: true})
+
+socket.on("message", (message, username) => {
     console.log(message)
 
     const html = Mustache.render(messageTemplate, {
         message: message.text,
-        createdAt: moment(message.createdAt).format('h:mm a')
+        createdAt: moment(message.createdAt).format('h:mm a'),
+        username
     })
     $messages.insertAdjacentHTML('beforeend',html)
 })
 
-socket.on("locationMessage", (url) => {
+socket.on("locationMessage", (url, username) => {
     console.log(url)
     const html = Mustache.render(locationTemplate, {
         url: url.text,
-        createdAt: moment(url.createdAt).format('h:mm a')
+        createdAt: moment(url.createdAt).format('h:mm a'),
+        username
     })
     $messages.insertAdjacentHTML('beforeend', html)
 
+})
+
+socket.on("roomData", ({users, room}) => {
+    console.log(users)
+    const html = Mustache.render(sidebarTemplate, {
+        users,
+        room
+    })
+
+    document.querySelector('#sidebar').innerHTML = html
+})
+
+socket.emit("join", {username, room}, (error) => {
+    if(error){
+        alert(error)
+        location.href = '/'
+    }
+
+    console.log('User joined successfully')
 })
 
 
